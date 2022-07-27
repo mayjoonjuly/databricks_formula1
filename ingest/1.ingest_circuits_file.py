@@ -5,7 +5,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Step 1 - read the CSV file using the spark dataframe reader
+# MAGIC #### Step 1 - read the CSV file using the spark dataframe reader API
 
 # COMMAND ----------
 
@@ -141,4 +141,4 @@ circuits_final_df.write.mode("overwrite").parquet("/mnt/formula1newdl/processed/
 
 # COMMAND ----------
 
-display(spark.read.parquet("/mnt/formula1dl/processed/circuits"))
+display(spark.read.parquet("/mnt/formula1newdl/processed/circuits"))
