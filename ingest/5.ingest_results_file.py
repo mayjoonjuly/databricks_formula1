@@ -4,6 +4,19 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #### Step 1 - Read the JSON file using the spark dataframe reader API
 
@@ -36,7 +49,7 @@ results_schema = StructType(fields=[StructField("resultId", IntegerType(), False
 
 results_df = spark.read \
 .schema(results_schema) \
-.json("/mnt/formula1newdl/raw/results.json")
+.json(f"{raw_folder_path}/results.json")
 
 # COMMAND ----------
 
@@ -49,7 +62,7 @@ display(results_df)
 
 # COMMAND ----------
 
-from pyspark.sql.functions import current_timestamp
+from pyspark.sql.functions import lit
 
 # COMMAND ----------
 
@@ -62,11 +75,15 @@ results_with_columns_df = results_df.withColumnRenamed("resultId", "result_id") 
                                     .withColumnRenamed("fastestLap", "fastest_lap") \
                                     .withColumnRenamed("fastestLapTime", "fastest_lap_time") \
                                     .withColumnRenamed("fastestLapSpeed", "fastest_lap_speed") \
-                                    .withColumn("ingestion_date", current_timestamp()) 
+                                    .withColumn("data_source", lit(v_data_source)) 
 
 # COMMAND ----------
 
-display(results_with_columns_df)
+results_with_ingestion_date_df = add_ingestion_date(results_with_columns_df)
+
+# COMMAND ----------
+
+display(results_with_ingestion_date_df)
 
 # COMMAND ----------
 
@@ -79,7 +96,7 @@ from pyspark.sql.functions import col
 
 # COMMAND ----------
 
-results_final_df = results_with_columns_df.drop(col("statusId"))
+results_final_df = results_with_ingestion_date_df.drop(col("statusId"))
 
 # COMMAND ----------
 
@@ -92,7 +109,7 @@ display(results_final_df)
 
 # COMMAND ----------
 
-results_final_df.write.mode("overwrite").partitionBy('race_id').parquet("/mnt/formula1newdl/processed/results")
+results_final_df.write.mode("overwrite").partitionBy('race_id').parquet(f"{processed_folder_path}/results")
 
 # COMMAND ----------
 
@@ -102,3 +119,7 @@ results_final_df.write.mode("overwrite").partitionBy('race_id').parquet("/mnt/fo
 # COMMAND ----------
 
 display(spark.read.parquet("/mnt/formula1newdl/processed/results"))
+
+# COMMAND ----------
+
+dbutils.notebook.exit("Success")
